@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.37411.7 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "McPipeAdd", "McPipeAdd\McPipeAdd.csproj", "{D246E2AE-B814-45EF-9AD3-5E093B80A27F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D246E2AE-B814-45EF-9AD3-5E093B80A27F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D246E2AE-B814-45EF-9AD3-5E093B80A27F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D246E2AE-B814-45EF-9AD3-5E093B80A27F}.Debug|x64.ActiveCfg = Debug|x64
+		{D246E2AE-B814-45EF-9AD3-5E093B80A27F}.Debug|x64.Build.0 = Debug|x64
+		{D246E2AE-B814-45EF-9AD3-5E093B80A27F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D246E2AE-B814-45EF-9AD3-5E093B80A27F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D246E2AE-B814-45EF-9AD3-5E093B80A27F}.Release|x64.ActiveCfg = Release|x64
+		{D246E2AE-B814-45EF-9AD3-5E093B80A27F}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {467596F7-8D82-4138-915D-0B2C73067448}
+	EndGlobalSection
+EndGlobal
