@@ -28,6 +28,7 @@ namespace McPipeAdd
         public string PartFamilyLongDesc = string.Empty;
         public string PartSizeLongDesc = string.Empty;
         public string ItemCode = string.Empty;
+        public string PressureClass = string.Empty;
         public string DataLinksEndType = string.Empty;
         public string DataLinksFacing = string.Empty;
         public string DataLinksPortName = string.Empty;

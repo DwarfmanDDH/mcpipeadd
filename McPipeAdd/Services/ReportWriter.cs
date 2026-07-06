@@ -31,6 +31,7 @@ namespace McPipeAdd
             Write(ed, log, "\nPartFamilyLongDesc: " + TextUtil.NullText(part.PartFamilyLongDesc));
             Write(ed, log, "\nPartSizeLongDesc: " + TextUtil.NullText(part.PartSizeLongDesc));
             Write(ed, log, "\nItemCode: " + TextUtil.NullText(part.ItemCode));
+            Write(ed, log, "\nPressureClass: " + TextUtil.NullText(part.PressureClass));
             Write(ed, log, "\nDataLinks default PortName: " + TextUtil.NullText(part.DataLinksPortName));
             Write(ed, log, "\nDataLinks default EndType: " + TextUtil.NullText(part.DataLinksEndType));
             Write(ed, log, "\nDataLinks default Facing: " + TextUtil.NullText(part.DataLinksFacing));
@@ -49,7 +50,11 @@ namespace McPipeAdd
                     Write(ed, log,
                         "\n  " + port.Name +
                         " | EndCondition: " + TextUtil.NullText(port.EndCondition) +
-                        " | NominalDiameter: " + TextUtil.NullText(port.NominalDiameter));
+                        " | NominalDiameter: " + TextUtil.NullText(port.NominalDiameter) +
+                        " | Facing: " + TextUtil.NullText(port.Facing) +
+                        " | PressureClass: " + TextUtil.NullText(port.PressureClass) +
+                        " | Position: " + port.FormatPosition() +
+                        " | PositionSource: " + TextUtil.NullText(port.PositionSource));
                 }
             }
 

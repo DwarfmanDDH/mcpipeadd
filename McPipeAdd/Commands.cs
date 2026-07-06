@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
-using Autodesk.AutoCAD.PlottingServices;
 using Autodesk.AutoCAD.Runtime;
+
 using AcadApp = Autodesk.AutoCAD.ApplicationServices.Application;
 
 [assembly: CommandClass(typeof(McPipeAdd.Commands))]
@@ -16,6 +17,7 @@ namespace McPipeAdd
         public static void McCheckPair()
         {
             DependencyResolver.Register();
+
             Editor ed = AcadApp.DocumentManager.MdiActiveDocument.Editor;
             List<string> log = new List<string>();
 
@@ -66,6 +68,76 @@ namespace McPipeAdd
                 ReportWriter.Write(ed, log, "\nStack trace: " + ex.StackTrace);
 
                 ReportWriter.WriteLogFile(ed, log, "McPipeAdd_MCCHECKPAIR_ERROR");
+            }
+        }
+
+        [CommandMethod("MCCHECKCONTINUE")]
+        public static void McCheckContinue()
+        {
+            DependencyResolver.Register();
+
+            Editor ed = AcadApp.DocumentManager.MdiActiveDocument.Editor;
+            List<string> log = new List<string>();
+
+            ReportWriter.Write(ed, log, "\nMCCHECKCONTINUE - Plant 3D continuation diagnostic started.");
+
+            try
+            {
+                PromptSelectionOptions options = new PromptSelectionOptions();
+                options.MessageForAdding =
+                    "\nSelect 1 part for a continuation pre-check, or select 2 parts for a continuation result check.\n" +
+                    "For a result check, select the original continuation start part first, then the component or pipe Plant inserted: ";
+
+                options.AllowDuplicates = false;
+                options.SingleOnly = false;
+
+                PromptSelectionResult selectionResult = ed.GetSelection(options);
+
+                if (selectionResult.Status != PromptStatus.OK)
+                {
+                    ReportWriter.Write(ed, log, "\nNothing selected.");
+                    return;
+                }
+
+                ObjectId[] objectIds = selectionResult.Value.GetObjectIds();
+
+                if (objectIds.Length != 1 && objectIds.Length != 2)
+                {
+                    ReportWriter.Write(ed, log, "\nYou selected " + objectIds.Length + " object(s).");
+                    ReportWriter.Write(ed, log, "\nPlease run MCCHECKCONTINUE again and select either 1 or 2 Plant 3D parts.");
+                    return;
+                }
+
+                PartInfo part1 = PlantPartReader.ReadPartInfo(objectIds[0]);
+                PartInfo part2 = null;
+
+                if (objectIds.Length == 2)
+                {
+                    part2 = PlantPartReader.ReadPartInfo(objectIds[1]);
+                }
+
+                ReportWriter.Write(ed, log, "\n");
+                ReportWriter.Write(ed, log, "\n================ MCCHECKCONTINUE REPORT ================");
+
+                ReportWriter.WritePartSummary(ed, log, "SELECTED PART 1", part1);
+
+                if (part2 != null)
+                {
+                    ReportWriter.WritePartSummary(ed, log, "SELECTED PART 2", part2);
+                }
+
+                ContinuationResultAnalyzer.WriteContinuationAnalysis(ed, log, part1, part2);
+
+                ReportWriter.Write(ed, log, "\n================ END MCCHECKCONTINUE REPORT ================");
+                ReportWriter.WriteLogFile(ed, log, "McPipeAdd_MCCHECKCONTINUE");
+            }
+            catch (System.Exception ex)
+            {
+                ReportWriter.Write(ed, log, "\nMCCHECKCONTINUE failed.");
+                ReportWriter.Write(ed, log, "\nError: " + ex.Message);
+                ReportWriter.Write(ed, log, "\nStack trace: " + ex.StackTrace);
+
+                ReportWriter.WriteLogFile(ed, log, "McPipeAdd_MCCHECKCONTINUE_ERROR");
             }
         }
     }

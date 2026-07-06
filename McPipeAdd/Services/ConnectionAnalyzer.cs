@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Collections.Generic;
 
 using Autodesk.AutoCAD.EditorInput;
@@ -9,6 +9,10 @@ namespace McPipeAdd
     {
         public static void WritePairAnalysis(Editor ed, List<string> log, PartInfo part1, PartInfo part2)
         {
+            ConnectorConfigResult connectorConfig = ConnectorConfigReader.LoadProjectConnectorConfig();
+
+            WriteConnectorConfigSummary(ed, log, connectorConfig);
+
             ReportWriter.Write(ed, log, "\n");
             ReportWriter.Write(ed, log, "\n----------------------------------------------------");
             ReportWriter.Write(ed, log, "\nCONNECTION ANALYSIS");
@@ -22,7 +26,12 @@ namespace McPipeAdd
                 foreach (PortInfo p2 in part2.Ports)
                 {
                     bool sameSize = TextUtil.SameNominalDiameter(p1.NominalDiameter, p2.NominalDiameter);
-                    bool valid = sameSize && IsValidConnection(p1.EndCondition, p2.EndCondition);
+                    bool valid =
+                        sameSize &&
+                        ConnectorConnectionAnalyzer.IsValidConnection(
+                            connectorConfig,
+                            p1.EndCondition,
+                            p2.EndCondition);
 
                     if (sameSize)
                     {
@@ -61,32 +70,83 @@ namespace McPipeAdd
             }
 
             ReportWriter.Write(ed, log, "\n");
-            ReportWriter.Write(ed, log, "\nExpected mating ends:");
+            ReportWriter.Write(ed, log, "\nExpected mating ends from connector configuration:");
 
             foreach (PortInfo port in part1.Ports)
             {
-                WriteExpectedMate(ed, log, part1.Label, port);
+                WriteExpectedMate(ed, log, connectorConfig, part1.Label, port);
             }
 
             foreach (PortInfo port in part2.Ports)
             {
-                WriteExpectedMate(ed, log, part2.Label, port);
+                WriteExpectedMate(ed, log, connectorConfig, part2.Label, port);
             }
 
-            WritePipeSpecificRecommendation(ed, log, part1, part2);
+            WritePipeSpecificRecommendation(ed, log, connectorConfig, part1, part2);
         }
 
-        private static void WriteExpectedMate(Editor ed, List<string> log, string partLabel, PortInfo port)
+        private static void WriteConnectorConfigSummary(
+            Editor ed,
+            List<string> log,
+            ConnectorConfigResult connectorConfig)
         {
-            string expected = GetExpectedMatingEnd(port.EndCondition);
+            ReportWriter.Write(ed, log, "\n");
+            ReportWriter.Write(ed, log, "\n----------------------------------------------------");
+            ReportWriter.Write(ed, log, "\nCONNECTOR CONFIGURATION");
+            ReportWriter.Write(ed, log, "\n----------------------------------------------------");
+
+            if (connectorConfig == null)
+            {
+                ReportWriter.Write(ed, log, "\nConnector config result was null. Fallback rules will be used.");
+                return;
+            }
+
+            ReportWriter.Write(ed, log, "\nPath: " + TextUtil.NullText(connectorConfig.ConfigPath));
+            ReportWriter.Write(ed, log, "\nLoaded joint rules: " + connectorConfig.Rules.Count);
+
+            if (connectorConfig.Errors.Count > 0)
+            {
+                ReportWriter.Write(ed, log, "\nErrors / Warnings:");
+
+                foreach (string error in connectorConfig.Errors)
+                {
+                    ReportWriter.Write(ed, log, "\n  " + error);
+                }
+
+                ReportWriter.Write(ed, log, "\nFallback rules will be used where connector rules are unavailable.");
+            }
+        }
+
+        private static void WriteExpectedMate(
+            Editor ed,
+            List<string> log,
+            ConnectorConfigResult connectorConfig,
+            string partLabel,
+            PortInfo port)
+        {
+            string expected =
+                ConnectorConnectionAnalyzer.FormatExpectedMatingEnds(
+                    connectorConfig,
+                    port.EndCondition);
 
             ReportWriter.Write(ed, log,
                 "\n  " + partLabel + "." + port.Name +
                 " [" + TextUtil.NullText(port.EndCondition) + "] expects: " +
                 expected);
+
+            ReportWriter.Write(ed, log,
+                "\n    Rule source: " +
+                ConnectorConnectionAnalyzer.GetConnectorRulesForEndSummary(
+                    connectorConfig,
+                    port.EndCondition));
         }
 
-        private static void WritePipeSpecificRecommendation(Editor ed, List<string> log, PartInfo part1, PartInfo part2)
+        private static void WritePipeSpecificRecommendation(
+            Editor ed,
+            List<string> log,
+            ConnectorConfigResult connectorConfig,
+            PartInfo part1,
+            PartInfo part2)
         {
             PartInfo pipe = null;
             PartInfo other = null;
@@ -112,40 +172,48 @@ namespace McPipeAdd
 
             foreach (PortInfo otherPort in other.Ports)
             {
-                string expectedPipeEnd = GetExpectedPipeEndForComponentPort(otherPort.EndCondition);
+                List<string> expectedPipeEnds =
+                    ConnectorConnectionAnalyzer.GetExpectedPipeEndsForComponentPort(
+                        connectorConfig,
+                        otherPort.EndCondition);
 
-                if (string.IsNullOrWhiteSpace(expectedPipeEnd))
+                if (expectedPipeEnds.Count == 0)
                 {
                     continue;
                 }
 
-                bool pipeHasExpectedEnd =
-                    pipe.Ports.Any(p =>
-                        TextUtil.SameNominalDiameter(p.NominalDiameter, otherPort.NominalDiameter) &&
-                        TextUtil.SameText(p.EndCondition, expectedPipeEnd));
+                string primaryExpectedPipeEnd =
+                    ConnectorConnectionAnalyzer.GetPrimaryExpectedPipeEndForComponentPort(
+                        connectorConfig,
+                        otherPort.EndCondition);
 
-                bool pipeHasInvalidEnd =
+                bool pipeHasAllowedEnd =
                     pipe.Ports.Any(p =>
                         TextUtil.SameNominalDiameter(p.NominalDiameter, otherPort.NominalDiameter) &&
-                        !TextUtil.SameText(p.EndCondition, expectedPipeEnd));
+                        expectedPipeEnds.Any(expected => TextUtil.SameText(p.EndCondition, expected)));
+
+                bool pipeHasDifferentEndSameSize =
+                    pipe.Ports.Any(p =>
+                        TextUtil.SameNominalDiameter(p.NominalDiameter, otherPort.NominalDiameter) &&
+                        !expectedPipeEnds.Any(expected => TextUtil.SameText(p.EndCondition, expected)));
 
                 ReportWriter.Write(ed, log,
                     "\n  Component port " + otherPort.Name +
                     " [" + otherPort.EndCondition + ", " + otherPort.NominalDiameter + "]" +
-                    " expects pipe end: " + expectedPipeEnd);
+                    " allows pipe end(s): " + string.Join(", ", expectedPipeEnds));
 
-                if (pipeHasExpectedEnd)
+                if (pipeHasAllowedEnd)
                 {
-                    ReportWriter.Write(ed, log, "\n    Selected pipe has the expected end condition.");
+                    ReportWriter.Write(ed, log, "\n    Selected pipe has an allowed end condition.");
                 }
-                else if (pipeHasInvalidEnd)
+                else if (pipeHasDifferentEndSameSize)
                 {
-                    ReportWriter.Write(ed, log, "\n    Selected pipe does NOT have the expected end condition.");
+                    ReportWriter.Write(ed, log, "\n    Selected pipe does NOT have an allowed end condition.");
                     ReportWriter.Write(ed, log, "\n    Selected pipe: " + TextUtil.NullText(pipe.PartFamilyLongDesc));
-                    ReportWriter.Write(ed, log, "\n    Recommendation: choose a pipe with EndCondition = " + expectedPipeEnd);
+                    ReportWriter.Write(ed, log, "\n    Recommendation: choose a pipe with EndCondition = " + primaryExpectedPipeEnd);
                 }
 
-                WriteSpecPipeCandidates(ed, log, other, pipe, otherPort, expectedPipeEnd);
+                WriteSpecPipeCandidates(ed, log, other, pipe, otherPort, primaryExpectedPipeEnd);
             }
         }
 
@@ -245,101 +313,6 @@ namespace McPipeAdd
             }
 
             return "[no priority]";
-        }
-
-        private static bool IsValidConnection(string end1, string end2)
-        {
-            string a = TextUtil.Clean(end1);
-            string b = TextUtil.Clean(end2);
-
-            if (string.IsNullOrWhiteSpace(a) || string.IsNullOrWhiteSpace(b))
-            {
-                return false;
-            }
-
-            if (Pair(a, b, "THDM", "THDF"))
-            {
-                return true;
-            }
-
-            if (Pair(a, b, "FL", "FL"))
-            {
-                return true;
-            }
-
-            if (Pair(a, b, "PL", "SW"))
-            {
-                return true;
-            }
-
-            if (IsButtweldCompatible(a) && IsButtweldCompatible(b))
-            {
-                return true;
-            }
-
-            return false;
-        }
-
-        private static string GetExpectedMatingEnd(string endCondition)
-        {
-            string end = TextUtil.Clean(endCondition);
-
-            switch (end)
-            {
-                case "THDF":
-                    return "THDM";
-
-                case "THDM":
-                    return "THDF";
-
-                case "SW":
-                    return "PL";
-
-                case "PL":
-                    return "SW, PL, or BV depending on joint/routing context";
-
-                case "BV":
-                    return "BV or PL";
-
-                case "FL":
-                    return "FL";
-
-                default:
-                    return "UNKNOWN";
-            }
-        }
-
-        private static string GetExpectedPipeEndForComponentPort(string componentEndCondition)
-        {
-            string end = TextUtil.Clean(componentEndCondition);
-
-            switch (end)
-            {
-                case "THDF":
-                    return "THDM";
-
-                case "SW":
-                    return "PL";
-
-                case "BV":
-                    return "BV";
-
-                case "PL":
-                    return "PL";
-
-                default:
-                    return string.Empty;
-            }
-        }
-
-        private static bool IsButtweldCompatible(string end)
-        {
-            return end == "BV" || end == "PL";
-        }
-
-        private static bool Pair(string a, string b, string x, string y)
-        {
-            return (a == x && b == y) || (a == y && b == x);
         }
 
         private static bool IsPipe(PartInfo part)

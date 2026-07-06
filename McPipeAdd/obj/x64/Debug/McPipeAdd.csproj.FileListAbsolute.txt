@@ -3,15 +3,12 @@ F:\KalMod\mcpipeadd\McPipeAdd\bin\x64\Debug\McPipeAdd.pdb
 F:\KalMod\mcpipeadd\McPipeAdd\bin\x64\Debug\Microsoft.Data.Sqlite.dll
 F:\KalMod\mcpipeadd\McPipeAdd\bin\x64\Debug\SQLitePCLRaw.batteries_v2.dll
 F:\KalMod\mcpipeadd\McPipeAdd\bin\x64\Debug\SQLitePCLRaw.core.dll
-F:\KalMod\mcpipeadd\McPipeAdd\bin\x64\Debug\SQLitePCLRaw.provider.dynamic_cdecl.dll
 F:\KalMod\mcpipeadd\McPipeAdd\bin\x64\Debug\System.Buffers.dll
-F:\KalMod\mcpipeadd\McPipeAdd\bin\x64\Debug\System.Data.SQLite.dll
 F:\KalMod\mcpipeadd\McPipeAdd\bin\x64\Debug\System.Memory.dll
 F:\KalMod\mcpipeadd\McPipeAdd\bin\x64\Debug\System.Numerics.Vectors.dll
 F:\KalMod\mcpipeadd\McPipeAdd\bin\x64\Debug\System.Runtime.CompilerServices.Unsafe.dll
 F:\KalMod\mcpipeadd\McPipeAdd\bin\x64\Debug\Microsoft.Data.Sqlite.xml
 F:\KalMod\mcpipeadd\McPipeAdd\bin\x64\Debug\System.Buffers.xml
-F:\KalMod\mcpipeadd\McPipeAdd\bin\x64\Debug\System.Data.SQLite.xml
 F:\KalMod\mcpipeadd\McPipeAdd\bin\x64\Debug\System.Memory.xml
 F:\KalMod\mcpipeadd\McPipeAdd\bin\x64\Debug\System.Numerics.Vectors.xml
 F:\KalMod\mcpipeadd\McPipeAdd\obj\x64\Debug\McPipeAdd.csproj.AssemblyReference.cache
