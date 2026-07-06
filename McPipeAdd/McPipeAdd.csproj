@@ -125,6 +125,7 @@
     <Compile Include="Commands.cs" />
     <Compile Include="Models\ConnectorConfigResult.cs" />
     <Compile Include="Models\ConnectorJointRule.cs" />
+    <Compile Include="Models\CustomPartDebugOptions.cs" />
     <Compile Include="Models\PartInfo.cs" />
     <Compile Include="Models\PipeCandidate.cs" />
     <Compile Include="Models\PortInfo.cs" />
@@ -137,6 +138,7 @@
     <Compile Include="Services\ConnectorConnectionAnalyzer.cs" />
     <Compile Include="Services\ContinuationGripAnalyzer.cs" />
     <Compile Include="Services\ContinuationResultAnalyzer.cs" />
+    <Compile Include="Services\CustomPartDebugAnalyzer.cs" />
     <Compile Include="Services\PlantPartReader.cs" />
     <Compile Include="Services\ReportWriter.cs" />
     <Compile Include="Services\SpecAutoFlangeDiagnostic.cs" />

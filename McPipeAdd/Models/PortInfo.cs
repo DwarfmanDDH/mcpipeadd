@@ -16,6 +16,12 @@ namespace McPipeAdd
         public double Z = 0.0;
         public string PositionSource = string.Empty;
 
+        public bool HasDirection = false;
+        public double DirectionX = 0.0;
+        public double DirectionY = 0.0;
+        public double DirectionZ = 0.0;
+        public string DirectionSource = string.Empty;
+
         public double DistanceTo(PortInfo other)
         {
             if (other == null || !HasPosition || !other.HasPosition)
@@ -41,6 +47,32 @@ namespace McPipeAdd
                    X.ToString("0.###") + ", " +
                    Y.ToString("0.###") + ", " +
                    Z.ToString("0.###") + ")";
+        }
+
+        public string FormatDirection()
+        {
+            if (!HasDirection)
+            {
+                return "<not available>";
+            }
+
+            return "(" +
+                   DirectionX.ToString("0.######") + ", " +
+                   DirectionY.ToString("0.######") + ", " +
+                   DirectionZ.ToString("0.######") + ")";
+        }
+
+        public double DirectionLength()
+        {
+            if (!HasDirection)
+            {
+                return 0.0;
+            }
+
+            return Math.Sqrt(
+                (DirectionX * DirectionX) +
+                (DirectionY * DirectionY) +
+                (DirectionZ * DirectionZ));
         }
     }
 }

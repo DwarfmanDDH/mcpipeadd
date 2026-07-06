@@ -36,6 +36,11 @@ namespace McPipeAdd
             Write(ed, log, "\nDataLinks default EndType: " + TextUtil.NullText(part.DataLinksEndType));
             Write(ed, log, "\nDataLinks default Facing: " + TextUtil.NullText(part.DataLinksFacing));
 
+            Write(ed, log, "\nGeometricExtents Min: " + part.FormatExtentsMin());
+            Write(ed, log, "\nGeometricExtents Max: " + part.FormatExtentsMax());
+            Write(ed, log, "\nGeometricExtents Size: " + part.FormatExtentsSize());
+            Write(ed, log, "\nGeometricExtents Source: " + TextUtil.NullText(part.ExtentsSource));
+
             Write(ed, log, "\n");
             Write(ed, log, "\nPorts:");
 
@@ -54,7 +59,9 @@ namespace McPipeAdd
                         " | Facing: " + TextUtil.NullText(port.Facing) +
                         " | PressureClass: " + TextUtil.NullText(port.PressureClass) +
                         " | Position: " + port.FormatPosition() +
-                        " | PositionSource: " + TextUtil.NullText(port.PositionSource));
+                        " | PositionSource: " + TextUtil.NullText(port.PositionSource) +
+                        " | Direction: " + port.FormatDirection() +
+                        " | DirectionSource: " + TextUtil.NullText(port.DirectionSource));
                 }
             }
 

@@ -93,6 +93,7 @@ namespace McPipeAdd
                     DBObject obj = tr.GetObject(objectId, OpenMode.ForRead);
 
                     info.RuntimeType = obj.GetType().FullName;
+                    TryReadEntityExtents(obj, info);
 
                     object portCollection = GetPortsAll(obj);
 
@@ -151,6 +152,7 @@ namespace McPipeAdd
                         }
 
                         TryReadPortPosition(obj, port, specPort, portName, portInfo);
+                        TryReadPortDirection(obj, port, specPort, portName, portInfo);
 
                         info.Ports.Add(portInfo);
                     }
@@ -193,6 +195,202 @@ namespace McPipeAdd
                 SetPortPosition(portInfo, x, y, z, source);
                 return;
             }
+        }
+
+        private static void TryReadEntityExtents(DBObject obj, PartInfo info)
+        {
+            try
+            {
+                Entity entity = obj as Entity;
+
+                if (entity == null)
+                {
+                    return;
+                }
+
+                Extents3d extents = entity.GeometricExtents;
+
+                info.HasExtents = true;
+                info.ExtentsMinX = extents.MinPoint.X;
+                info.ExtentsMinY = extents.MinPoint.Y;
+                info.ExtentsMinZ = extents.MinPoint.Z;
+                info.ExtentsMaxX = extents.MaxPoint.X;
+                info.ExtentsMaxY = extents.MaxPoint.Y;
+                info.ExtentsMaxZ = extents.MaxPoint.Z;
+                info.ExtentsSource = "Entity.GeometricExtents";
+            }
+            catch (System.Exception ex)
+            {
+                info.Errors.Add("Could not read geometric extents: " + ex.Message);
+            }
+        }
+
+        private static void TryReadPortDirection(
+            object plantObject,
+            object runtimePort,
+            object specPort,
+            string portName,
+            PortInfo portInfo)
+        {
+            double x;
+            double y;
+            double z;
+            string source;
+
+            if (TryReadDirectionFromObject(runtimePort, out x, out y, out z, out source))
+            {
+                SetPortDirection(portInfo, x, y, z, "runtime port " + source);
+                return;
+            }
+
+            if (TryReadDirectionFromObject(specPort, out x, out y, out z, out source))
+            {
+                SetPortDirection(portInfo, x, y, z, "spec port " + source);
+                return;
+            }
+
+            if (TryReadDirectionFromPlantObjectMethod(plantObject, portName, out x, out y, out z, out source))
+            {
+                SetPortDirection(portInfo, x, y, z, source);
+                return;
+            }
+        }
+
+        private static void SetPortDirection(
+            PortInfo portInfo,
+            double x,
+            double y,
+            double z,
+            string source)
+        {
+            portInfo.HasDirection = true;
+            portInfo.DirectionX = x;
+            portInfo.DirectionY = y;
+            portInfo.DirectionZ = z;
+            portInfo.DirectionSource = source ?? string.Empty;
+        }
+
+        private static bool TryReadDirectionFromObject(
+            object obj,
+            out double x,
+            out double y,
+            out double z,
+            out string source)
+        {
+            x = 0.0;
+            y = 0.0;
+            z = 0.0;
+            source = string.Empty;
+
+            if (obj == null)
+            {
+                return false;
+            }
+
+            string[] memberNames =
+            {
+                "Direction",
+                "DirectionVector",
+                "PortDirection",
+                "ConnectDirection",
+                "ConnectionDirection",
+                "Axis",
+                "AxisVector",
+                "PortAxis",
+                "Normal",
+                "Vector",
+                "Tangent",
+                "XAxis",
+                "ZAxis"
+            };
+
+            foreach (string memberName in memberNames)
+            {
+                object propertyValue = TryGetPropertyValue(obj, memberName);
+
+                if (TryReadXyzFromPointObject(propertyValue, out x, out y, out z))
+                {
+                    source = "property " + memberName;
+                    return true;
+                }
+
+                object fieldValue = TryGetFieldValue(obj, memberName);
+
+                if (TryReadXyzFromPointObject(fieldValue, out x, out y, out z))
+                {
+                    source = "field " + memberName;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool TryReadDirectionFromPlantObjectMethod(
+            object plantObject,
+            string portName,
+            out double x,
+            out double y,
+            out double z,
+            out string source)
+        {
+            x = 0.0;
+            y = 0.0;
+            z = 0.0;
+            source = string.Empty;
+
+            if (plantObject == null || string.IsNullOrWhiteSpace(portName))
+            {
+                return false;
+            }
+
+            string[] methodNames =
+            {
+                "GetPortDirection",
+                "GetPortAxis",
+                "GetPortNormal",
+                "GetConnectionDirection",
+                "PortDirection",
+                "PortAxis"
+            };
+
+            Type type = plantObject.GetType();
+
+            foreach (string methodName in methodNames)
+            {
+                MethodInfo[] methods = type
+                    .GetMethods(BindingFlags.Public | BindingFlags.Instance)
+                    .Where(m => m.Name == methodName)
+                    .ToArray();
+
+                foreach (MethodInfo method in methods)
+                {
+                    ParameterInfo[] parameters = method.GetParameters();
+
+                    if (parameters.Length != 1 ||
+                        parameters[0].ParameterType != typeof(string))
+                    {
+                        continue;
+                    }
+
+                    try
+                    {
+                        object value = method.Invoke(plantObject, new object[] { portName });
+
+                        if (TryReadXyzFromPointObject(value, out x, out y, out z))
+                        {
+                            source = "plant object method " + methodName;
+                            return true;
+                        }
+                    }
+                    catch
+                    {
+                        // Try the next method.
+                    }
+                }
+            }
+
+            return false;
         }
 
         private static void SetPortPosition(
